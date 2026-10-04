@@ -114,8 +114,44 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        <div className="pt-4 border-t border-slate-100 text-center">
-          <p className="text-xs text-slate-500 leading-relaxed">
+        <div className="pt-4 border-t border-slate-100 space-y-3">
+          <div className="text-center">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Quick Test Credentials
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('superadmin');
+                setPassword('SuperAdmin@Omni2026!');
+              }}
+              className="p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-left transition-colors"
+            >
+              <div className="flex items-center gap-1 font-bold text-amber-900">
+                <span>👑 Super Hidden Admin</span>
+              </div>
+              <p className="text-[10px] text-amber-700 font-mono mt-0.5">superadmin / SuperAdmin@Omni2026!</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('admin');
+                setPassword('Admin@Prime2026!');
+              }}
+              className="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-left transition-colors"
+            >
+              <div className="flex items-center gap-1 font-bold text-slate-800">
+                <span>Regular Admin</span>
+              </div>
+              <p className="text-[10px] text-slate-500 font-mono mt-0.5">admin / Admin@Prime2026!</p>
+            </button>
+          </div>
+
+          <p className="text-xs text-slate-500 leading-relaxed text-center pt-1">
             Need an account or password reset? <br />
             <span className="text-slate-600 font-medium">Please contact your Super Administrator.</span>
           </p>

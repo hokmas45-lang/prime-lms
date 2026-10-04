@@ -6,27 +6,34 @@ import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { AdminUserManagement } from './components/admin/AdminUserManagement';
 import { AdminAiMonitoring } from './components/admin/AdminAiMonitoring';
+import { AdminDisciplinaryModule } from './components/admin/AdminDisciplinaryModule';
+import { AdminAcademicPromotion } from './components/admin/AdminAcademicPromotion';
+import { DailyEvaluationsModule } from './components/academic/DailyEvaluationsModule';
 import { AssignmentsModule } from './components/academic/AssignmentsModule';
 import { QuizzesModule } from './components/academic/QuizzesModule';
 import { SubmissionsModule } from './components/academic/SubmissionsModule';
 import { MessagingModule } from './components/communication/MessagingModule';
 import { AnnouncementsModule } from './components/communication/AnnouncementsModule';
 import { PrimeAiChatbot } from './components/ai/PrimeAiChatbot';
+import { SubjectCardsView } from './components/academic/SubjectCardsView';
+import { LiveZoomBanner } from './components/academic/LiveZoomBanner';
+import { TeacherZoomModal } from './components/academic/TeacherZoomModal';
 import { GraduationCap } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { currentUser } = useData();
-  const [activeTab, setActiveTab] = useState<string>('assignments');
+  const [activeTab, setActiveTab] = useState<string>('subjects');
   const [showFloatingAi, setShowFloatingAi] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Set default tab based on role when user logs in
   useEffect(() => {
     if (currentUser) {
-      if (currentUser.role === 'admin') {
+      if (currentUser.role === 'admin' || currentUser.role === 'super_admin') {
         setActiveTab('users');
       } else {
-        setActiveTab('assignments');
+        setActiveTab('subjects');
       }
     }
   }, [currentUser]);
@@ -38,10 +45,18 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'subjects':
+        return <SubjectCardsView onSelectSubject={() => setActiveTab('assignments')} />;
       case 'users':
-        return currentUser.role === 'admin' ? <AdminUserManagement /> : <AssignmentsModule />;
+        return (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? <AdminUserManagement /> : <SubjectCardsView />;
       case 'ai-monitoring':
-        return currentUser.role === 'admin' ? <AdminAiMonitoring /> : <AssignmentsModule />;
+        return (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? <AdminAiMonitoring /> : <AssignmentsModule />;
+      case 'academic-promotion':
+        return (currentUser.role === 'admin' || currentUser.role === 'super_admin') ? <AdminAcademicPromotion /> : <AssignmentsModule />;
+      case 'disciplinary':
+        return <AdminDisciplinaryModule />;
+      case 'daily-evaluations':
+        return <DailyEvaluationsModule />;
       case 'assignments':
         return <AssignmentsModule />;
       case 'quizzes':
@@ -55,7 +70,7 @@ const AppContent: React.FC = () => {
       case 'ai-helper':
         return <PrimeAiChatbot />;
       default:
-        return currentUser.role === 'admin' ? <AdminUserManagement /> : <AssignmentsModule />;
+        return <SubjectCardsView />;
     }
   };
 
@@ -66,6 +81,7 @@ const AppContent: React.FC = () => {
         onOpenAiHelper={() => setShowFloatingAi(true)}
         onToggleMobileMenu={() => setIsMobileMenuOpen(prev => !prev)}
         isMobileMenuOpen={isMobileMenuOpen}
+        onOpenZoomModal={() => setShowZoomModal(true)}
       />
 
       {/* Main Layout Container */}
@@ -80,9 +96,18 @@ const AppContent: React.FC = () => {
 
         {/* Content Area with extra bottom padding on mobile for sticky bottom bar */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 overflow-y-auto pb-20 lg:pb-8">
+          {/* Real-Time Live Zoom Session Broadcast Banner */}
+          <LiveZoomBanner />
+
           {renderContent()}
         </main>
       </div>
+
+      {/* Teacher Live Zoom Modal */}
+      <TeacherZoomModal 
+        isOpen={showZoomModal} 
+        onClose={() => setShowZoomModal(false)} 
+      />
 
       {/* Floating AI Chatbot Modal when triggered */}
       {showFloatingAi && (

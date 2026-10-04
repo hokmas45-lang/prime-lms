@@ -15,8 +15,10 @@ import {
   Maximize2,
   CheckSquare,
   Square,
-  Layers
+  Layers,
+  Video
 } from 'lucide-react';
+import { TeacherZoomModal } from './TeacherZoomModal';
 
 export const AssignmentsModule: React.FC = () => {
   const { 
@@ -32,11 +34,12 @@ export const AssignmentsModule: React.FC = () => {
   if (!currentUser) return null;
 
   const isTeacher = currentUser.role === 'teacher';
-  const isAdmin = currentUser.role === 'admin';
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super_admin';
   const isStudent = currentUser.role === 'student';
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [subject, setSubject] = useState(currentUser.subject || SUBJECTS[0]);
@@ -208,13 +211,24 @@ export const AssignmentsModule: React.FC = () => {
         </div>
 
         {(isTeacher || isAdmin) && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create New Assignment</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowZoomModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all"
+              title="Launch Live Zoom Session for your class"
+            >
+              <Video className="w-4 h-4" />
+              <span>Start Live Zoom</span>
+            </button>
+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Assignment</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -794,6 +808,12 @@ export const AssignmentsModule: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Teacher Live Zoom Modal */}
+      <TeacherZoomModal 
+        isOpen={showZoomModal} 
+        onClose={() => setShowZoomModal(false)} 
+      />
     </div>
   );
 };

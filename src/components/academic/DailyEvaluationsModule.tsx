@@ -93,6 +93,11 @@ export const DailyEvaluationsModule: React.FC = () => {
     const student = users.find(u => u.id === targetStudentId);
     if (!student) return;
 
+    const bScore = Number(behaviorScore);
+    const pScore = Number(participationScore);
+    const aScore = Number(assignmentScore);
+    const overallScore = Math.round((bScore + pScore + aScore) / 3);
+
     logDailyEvaluation({
       studentId: student.id,
       studentName: student.name,
@@ -100,9 +105,10 @@ export const DailyEvaluationsModule: React.FC = () => {
       section: student.section || selectedSection,
       subject: evalSubject,
       date: selectedDate,
-      behaviorScore: Number(behaviorScore),
-      participationScore: Number(participationScore),
-      assignmentScore: Number(assignmentScore),
+      behaviorScore: bScore,
+      participationScore: pScore,
+      assignmentScore: aScore,
+      overallScore,
       remarks: evalRemarks.trim() || undefined,
     });
 

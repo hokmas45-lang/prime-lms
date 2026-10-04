@@ -7,17 +7,32 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Helper functions
+    // Authentication & Multi-Tier Role Evaluation Helpers
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isSuperAdmin() {
+    // Top-Tier Super Hidden Admin (Absolute Authority)
+    function isSuperHiddenAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'hokmas45@gmail.com' ||
         (request.auth.token.keys().hasAll(['email_verified']) && request.auth.token.email_verified == true && request.auth.token.email == 'hokmas45@gmail.com') ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true
+        ))
       );
+    }
+
+    // Regular Tier Admin
+    function isRegularAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isAnyAdmin() {
+      return isSuperHiddenAdmin() || isRegularAdmin();
     }
 
     // Test connection doc
@@ -25,12 +40,38 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    // Users Collection
+    // Users Collection with Strict Super Hidden Admin RBAC
     match /users/{userId} {
+      // Super Admin can read all accounts; Regular admins and other users CANNOT read the Super Hidden Admin
+      allow read: if isSuperHiddenAdmin() || 
+        (isSignedIn() && (!('role' in resource.data) || resource.data.role != 'super_admin') && (!('isSuperAdmin' in resource.data) || resource.data.isSuperAdmin != true)) ||
+        (isSignedIn() && request.auth.uid == userId);
+
+      // Super Admin has full creation power. Regular admins can only create non-admin accounts.
+      allow create: if isSuperHiddenAdmin() || (
+        isRegularAdmin() && 
+        request.resource.data.role != 'super_admin' && 
+        request.resource.data.role != 'admin'
+      );
+
+      // Super Admin can update, promote, demote, block any account. Regular admins CANNOT touch Super Admin or promote to admin.
+      allow update: if isSuperHiddenAdmin() || (
+        isRegularAdmin() && 
+        resource.data.role != 'super_admin' && 
+        resource.data.role != 'admin' &&
+        request.resource.data.role != 'super_admin' &&
+        request.resource.data.role != 'admin'
+      ) || (isSignedIn() && request.auth.uid == userId && request.resource.data.role == resource.data.role);
+
+      // Only Super Hidden Admin can delete accounts, especially Admins
+      allow delete: if isSuperHiddenAdmin();
+    }
+
+    // Live Zoom Sessions Collection
+    match /zoomSessions/{sessionId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSuperAdmin();
+      allow update, delete: if isSuperHiddenAdmin() || (isSignedIn() && resource.data.teacherId == request.auth.uid);
     }
 
     // Courses Collection
@@ -97,7 +138,7 @@ service cloud.firestore {
     // System Academic Settings Collection
     match /settings/{settingId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isAnyAdmin();
     }
   }
 }

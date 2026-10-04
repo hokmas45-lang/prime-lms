@@ -17,24 +17,60 @@ import {
   AlertCircle,
   Edit2,
   CheckSquare,
-  Square
+  Square,
+  ShieldCheck,
+  Shield,
+  Briefcase,
+  Crown,
+  Ban,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  UserCheck,
+  CheckCircle
 } from 'lucide-react';
 
+const ADMIN_PERMISSION_OPTIONS = [
+  { id: 'manage_users', label: 'User & Student Database', desc: 'Create, edit, and manage student and faculty accounts' },
+  { id: 'manage_admins', label: 'Admin Accounts Management', desc: 'Promote, demote, and oversee subordinate administrators' },
+  { id: 'behavior_disciplinary', label: 'Disciplinary & Behavior System', desc: 'Issue official warnings, suspensions, and expulsion notices' },
+  { id: 'academic_promotion', label: 'Academic Year & Term Promotion', desc: 'Advance academic terms, student promotion, and data resets' },
+  { id: 'ai_monitoring', label: 'AI Chat Monitoring', desc: 'Review, moderate, and monitor student Gemini AI sessions' },
+  { id: 'announcements', label: 'Campus Announcements', desc: 'Publish institutional notices and advisories' },
+  { id: 'study_reels', label: 'Study Reels Feed & Moderation', desc: 'Manage educational short video reels' },
+  { id: 'full_access', label: 'Full System Control', desc: 'Unrestricted Super Admin privileges across all features' },
+];
+
 export const AdminUserManagement: React.FC = () => {
-  const { users, createUser, updateUser, deleteUser } = useData();
+  const { 
+    currentUser, 
+    visibleUsers, 
+    isSuperAdmin, 
+    createUser, 
+    updateUser, 
+    deleteUser,
+    promoteToAdmin,
+    demoteAdmin,
+    toggleBlockUser
+  } = useData();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'teacher' | 'student'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'teacher' | 'student' | 'subadmin'>('all');
   const [gradeFilter, setGradeFilter] = useState<string>('all');
   const [sectionFilter, setSectionFilter] = useState<string>('all');
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   // Form state for creating
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('student');
+  const [subAdminTitle, setSubAdminTitle] = useState('School Registrar');
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([
+    'manage_users',
+    'announcements'
+  ]);
   const [grade, setGrade] = useState<string>(GRADES[0]);
   const [section, setSection] = useState<string>(SECTIONS[0]);
   const [subject, setSubject] = useState<string>(SUBJECTS[0]);
@@ -48,6 +84,8 @@ export const AdminUserManagement: React.FC = () => {
   const [editName, setEditName] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editSubAdminTitle, setEditSubAdminTitle] = useState('');
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [editGrade, setEditGrade] = useState('');
   const [editSection, setEditSection] = useState('');
   const [editSubject, setEditSubject] = useState('');
@@ -56,6 +94,17 @@ export const AdminUserManagement: React.FC = () => {
 
   // Copy feedback state
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const togglePermission = (permId: string, isEdit: boolean = false) => {
+    const list = isEdit ? editPermissions : selectedPermissions;
+    const setList = isEdit ? setEditPermissions : setSelectedPermissions;
+
+    if (list.includes(permId)) {
+      setList(list.filter(p => p !== permId));
+    } else {
+      setList([...list, permId]);
+    }
+  };
 
   const toggleSectionForGrade = (
     gradeName: string, 
@@ -113,8 +162,10 @@ export const AdminUserManagement: React.FC = () => {
       username: username.trim(),
       password: password.trim(),
       role,
-      grade: primaryGrade,
-      section: primarySection,
+      subAdminTitle: role === 'subadmin' ? (subAdminTitle.trim() || 'Staff Administrator') : undefined,
+      permissions: role === 'subadmin' ? selectedPermissions : undefined,
+      grade: role === 'student' || role === 'teacher' ? primaryGrade : undefined,
+      section: role === 'student' || role === 'teacher' ? primarySection : undefined,
       assignedClasses,
       subject: role === 'teacher' ? subject : undefined,
     });
@@ -135,6 +186,8 @@ export const AdminUserManagement: React.FC = () => {
     setEditName(user.name);
     setEditUsername(user.username);
     setEditPassword(user.password || '');
+    setEditSubAdminTitle(user.subAdminTitle || 'School Registrar');
+    setEditPermissions(user.permissions || ['manage_users']);
     setEditGrade(user.grade || GRADES[0]);
     setEditSection(user.section || SECTIONS[0]);
     setEditSubject(user.subject || SUBJECTS[0]);
@@ -171,8 +224,10 @@ export const AdminUserManagement: React.FC = () => {
       name: editName.trim(),
       username: editUsername.trim(),
       password: editPassword.trim(),
-      grade: primaryGrade,
-      section: primarySection,
+      subAdminTitle: editingUser.role === 'subadmin' ? editSubAdminTitle.trim() : undefined,
+      permissions: editingUser.role === 'subadmin' ? editPermissions : undefined,
+      grade: editingUser.role === 'student' || editingUser.role === 'teacher' ? primaryGrade : undefined,
+      section: editingUser.role === 'student' || editingUser.role === 'teacher' ? primarySection : undefined,
       assignedClasses,
       subject: editingUser.role === 'teacher' ? editSubject : undefined,
     });
@@ -183,40 +238,87 @@ export const AdminUserManagement: React.FC = () => {
   const handleCopyCredentials = (u: AppUser) => {
     const classInfo = u.assignedClasses && u.assignedClasses.length > 0
       ? u.assignedClasses.map(ac => `${ac.grade}: ${ac.sections.join(', ')}`).join('; ')
+      : u.role === 'subadmin'
+      ? `Administrative Role: ${u.subAdminTitle || 'Sub-Admin'}`
       : `${u.grade} - ${u.section}`;
 
-    const text = `Prime LMS Account Credentials:\nName: ${u.name}\nRole: ${u.role}\nAssigned Classes: ${classInfo}\nUsername: ${u.username}\nPassword: ${u.password}`;
+    const text = `Prime LMS Account Credentials:\nName: ${u.name}\nRole: ${u.role === 'subadmin' ? `Staff (${u.subAdminTitle})` : u.role}\nDetails: ${classInfo}\nUsername: ${u.username}\nPassword: ${u.password}`;
     navigator.clipboard.writeText(text);
     setCopiedId(u.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const filteredUsers = users.filter(u => {
+  const filteredUsers = visibleUsers.filter(u => {
     const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          u.username.toLowerCase().includes(searchQuery.toLowerCase());
+                          u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (u.subAdminTitle && u.subAdminTitle.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesRole = roleFilter === 'all' || u.role === roleFilter;
     const matchesGrade = gradeFilter === 'all' || u.grade === gradeFilter;
     const matchesSection = sectionFilter === 'all' || u.section === sectionFilter;
     return matchesSearch && matchesRole && matchesGrade && matchesSection;
   });
 
-  const teachersCount = users.filter(u => u.role === 'teacher').length;
-  const studentsCount = users.filter(u => u.role === 'student').length;
+  const adminsCount = visibleUsers.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
+  const teachersCount = visibleUsers.filter(u => u.role === 'teacher').length;
+  const studentsCount = visibleUsers.filter(u => u.role === 'student').length;
+  const subAdminsCount = visibleUsers.filter(u => u.role === 'subadmin').length;
 
   return (
     <div className="space-y-6">
+      {/* Super Hidden Admin Security Banner (Owner Exclusive) */}
+      {isSuperAdmin && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-900 to-indigo-950 border border-amber-500/40 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-black shadow-lg shrink-0">
+              <Crown className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-amber-300 uppercase tracking-wider">
+                  Super Hidden Admin (System Owner Tier)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 text-[10px] font-mono font-bold">
+                  Absolute RBAC Control
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1 max-w-2xl">
+                You possess unrestricted multi-tier authority: promote, demote, block, or delete subordinate regular Admins and staff. Your Super Admin account remains strictly concealed from regular administrators.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-mono text-amber-300">
+              Account: {currentUser?.email || 'Owner'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {actionNotice && (
+        <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 font-semibold flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>{actionNotice}</span>
+          </div>
+          <button onClick={() => setActionNotice(null)} className="text-indigo-400 hover:text-indigo-700 text-sm font-bold">✕</button>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs uppercase tracking-wider mb-1">
             <Users className="w-4 h-4" />
-            <span>Super Administrator Control</span>
+            <span>{isSuperAdmin ? 'Master Multi-Tier Administration' : 'Administrator Control Panel'}</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            User Account Management
+            User Account &amp; Staff Hierarchy Management
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-xl">
-            Register teachers and students with assigned usernames, passwords, grades, and class sections.
+            {isSuperAdmin 
+              ? 'Oversee all tiers: Administrators, Faculty, Sub-Admins, and Enrolled Scholars with full RBAC enforcement.'
+              : 'Register teachers and students with assigned usernames, passwords, grades, and class sections.'}
           </p>
         </div>
 
@@ -233,21 +335,26 @@ export const AdminUserManagement: React.FC = () => {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Total Registered</span>
-          <div className="text-2xl font-extrabold text-slate-800 mt-1">{users.length}</div>
-          <p className="text-xs text-slate-500 mt-0.5">Faculty &amp; Students</p>
+          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Total Visible Accounts</span>
+          <div className="text-2xl font-extrabold text-slate-800 mt-1">{visibleUsers.length}</div>
+          <p className="text-[11px] text-slate-500 mt-0.5">Faculty, Staff &amp; Students</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-semibold text-indigo-500 uppercase tracking-wider block">Teachers</span>
+          <span className="text-[11px] font-semibold text-indigo-500 uppercase tracking-wider block">Teachers</span>
           <div className="text-2xl font-extrabold text-indigo-700 mt-1">{teachersCount}</div>
-          <p className="text-xs text-slate-500 mt-0.5">Instructors with Class Access</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Classroom Instructors</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
-          <span className="text-xs font-semibold text-emerald-500 uppercase tracking-wider block">Students</span>
+          <span className="text-[11px] font-semibold text-emerald-500 uppercase tracking-wider block">Students</span>
           <div className="text-2xl font-extrabold text-emerald-700 mt-1">{studentsCount}</div>
-          <p className="text-xs text-slate-500 mt-0.5">Enrolled across Grades &amp; Sections</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Enrolled Cohorts</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
+          <span className="text-[11px] font-semibold text-purple-600 uppercase tracking-wider block">Sub-Admins</span>
+          <div className="text-2xl font-extrabold text-purple-700 mt-1">{subAdminsCount}</div>
+          <p className="text-[11px] text-slate-500 mt-0.5">Staff with Granular Roles</p>
         </div>
       </div>
 
@@ -260,7 +367,7 @@ export const AdminUserManagement: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by full name or username..."
+              placeholder="Search by full name, username, or administrative title..."
               className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500"
             />
           </div>
@@ -274,6 +381,7 @@ export const AdminUserManagement: React.FC = () => {
               <option value="all">All Roles</option>
               <option value="teacher">Teachers</option>
               <option value="student">Students</option>
+              <option value="subadmin">Staff Sub-Admins</option>
             </select>
 
             <select
@@ -440,13 +548,26 @@ export const AdminUserManagement: React.FC = () => {
                         {u.password || '••••••••'}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
-                          u.role === 'teacher'
-                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        }`}>
-                          {u.role === 'teacher' ? 'Teacher' : 'Student'}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                            u.role === 'super_admin'
+                              ? 'bg-amber-500/10 text-amber-700 border-amber-300 font-bold'
+                              : u.role === 'admin'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : u.role === 'subadmin'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : u.role === 'teacher'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            {u.role === 'super_admin' ? '👑 Super Admin' : u.role === 'admin' ? 'Administrator' : u.role === 'subadmin' ? (u.subAdminTitle || 'Sub-Admin') : u.role === 'teacher' ? 'Teacher' : 'Student'}
+                          </span>
+                          {u.isBlocked && (
+                            <span className="px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 text-[10px] font-bold border border-rose-300">
+                              Suspended
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-slate-700 font-medium max-w-xs">
                         {u.role === 'teacher' && u.assignedClasses && u.assignedClasses.length > 0 ? (
@@ -458,14 +579,62 @@ export const AdminUserManagement: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <span>{u.grade} • <span className="font-semibold text-slate-900">{u.section}</span></span>
+                          <span>{u.grade || 'Campus-wide'} • <span className="font-semibold text-slate-900">{u.section || 'General'}</span></span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-slate-500">
-                        {u.role === 'teacher' ? (u.subject || 'All Subjects') : 'Enrolled Scholar'}
+                        {u.role === 'teacher' ? (u.subject || 'All Subjects') : u.role === 'admin' ? 'Administrative Tier' : 'Enrolled Scholar'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {/* Super Admin Tier Actions: Promote to Admin or Demote Admin */}
+                          {isSuperAdmin && u.role !== 'super_admin' && (
+                            <>
+                              {u.role === 'admin' ? (
+                                <button
+                                  onClick={() => {
+                                    const res = demoteAdmin(u.id);
+                                    if (res.success) setActionNotice(`Demoted ${u.name} from Administrator to Faculty.`);
+                                    else alert(res.error);
+                                  }}
+                                  className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors"
+                                  title="Demote Administrator to Faculty"
+                                >
+                                  <ArrowDownCircle className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    const res = promoteToAdmin(u.id);
+                                    if (res.success) setActionNotice(`Promoted ${u.name} to Administrator with RBAC access.`);
+                                    else alert(res.error);
+                                  }}
+                                  className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Promote User to Regular Administrator"
+                                >
+                                  <Crown className="w-4 h-4" />
+                                </button>
+                              )}
+
+                              {/* Block / Unblock User */}
+                              <button
+                                onClick={() => {
+                                  const res = toggleBlockUser(u.id);
+                                  if (res.success) setActionNotice(`${u.name} status updated: ${u.isBlocked ? 'Reinstated' : 'Suspended'}.`);
+                                  else alert(res.error);
+                                }}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  u.isBlocked 
+                                    ? 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50' 
+                                    : 'text-amber-600 hover:text-rose-700 hover:bg-rose-50'
+                                }`}
+                                title={u.isBlocked ? "Reinstate Account" : "Suspend/Block Account"}
+                              >
+                                {u.isBlocked ? <UserCheck className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                              </button>
+                            </>
+                          )}
+
                           <button
                             onClick={() => handleOpenEdit(u)}
                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -473,6 +642,7 @@ export const AdminUserManagement: React.FC = () => {
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
+
                           <button
                             onClick={() => handleCopyCredentials(u)}
                             className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -484,13 +654,17 @@ export const AdminUserManagement: React.FC = () => {
                               <Copy className="w-4 h-4" />
                             )}
                           </button>
-                          <button
-                            onClick={() => deleteUser(u.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Remove User"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+
+                          {/* Delete Account (protected by Super Admin rules) */}
+                          {(isSuperAdmin || u.role !== 'admin') && u.role !== 'super_admin' && (
+                            <button
+                              onClick={() => deleteUser(u.id)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              title="Remove User"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

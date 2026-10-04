@@ -11,7 +11,12 @@ import {
   ShieldAlert,
   X,
   LogOut,
-  GraduationCap
+  GraduationCap,
+  Award,
+  Calendar,
+  AlertTriangle,
+  BookOpen,
+  Crown
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,12 +32,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen, 
   onCloseMobile 
 }) => {
-  const { currentUser, assignments, quizzes, users, aiInteractions, logout } = useData();
+  const { 
+    currentUser, 
+    assignments, 
+    quizzes, 
+    users, 
+    aiInteractions, 
+    disciplinaryNotices,
+    logout 
+  } = useData();
 
   if (!currentUser) return null;
 
   const isStudent = currentUser.role === 'student';
-  const isAdmin = currentUser.role === 'admin';
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super_admin';
 
   const studentAssignmentsCount = isStudent
     ? assignments.filter(a => a.grade === currentUser.grade && a.section === currentUser.section).length
@@ -44,35 +57,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const flaggedAiCount = aiInteractions.filter(i => i.flagged).length;
 
+  const studentActiveNoticesCount = isStudent
+    ? disciplinaryNotices.filter(n => n.studentId === currentUser.id && n.status === 'active').length
+    : disciplinaryNotices.filter(n => n.status === 'active').length;
+
   const navItems = [
+    // Core Subject 3D Cards
+    {
+      id: 'subjects',
+      label: 'Subject Cards & Grades',
+      icon: BookOpen,
+      roles: ['super_admin', 'admin', 'teacher', 'student'],
+      highlight: true,
+    },
     // Admin Items
     {
       id: 'users',
-      label: 'User Management',
-      icon: Users,
-      roles: ['admin'],
+      label: currentUser.role === 'super_admin' ? 'Master User & RBAC' : 'User Management',
+      icon: currentUser.role === 'super_admin' ? Crown : Users,
+      roles: ['admin', 'super_admin'],
       badge: users.length > 0 ? users.length : undefined,
+    },
+    {
+      id: 'academic-promotion',
+      label: 'Term & Year Promotion',
+      icon: Calendar,
+      roles: ['admin', 'super_admin'],
     },
     {
       id: 'ai-monitoring',
       label: 'AI Chat Monitoring',
       icon: ShieldAlert,
-      roles: ['admin'],
+      roles: ['admin', 'super_admin'],
       badge: flaggedAiCount > 0 ? `${flaggedAiCount} flag` : undefined,
       badgeColor: 'bg-amber-100 text-amber-800',
     },
+    // Core Academic Modules
     {
       id: 'assignments',
       label: currentUser.role === 'teacher' ? 'Assignments' : isAdmin ? 'All Assignments' : 'My Assignments',
       icon: FileText,
-      roles: ['admin', 'teacher', 'student'],
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
       badge: studentAssignmentsCount > 0 ? studentAssignmentsCount : undefined,
+    },
+    {
+      id: 'daily-evaluations',
+      label: currentUser.role === 'teacher' ? 'Grades / Daily Evaluation' : isStudent ? 'Daily Grades & Feedback' : 'Daily Evaluations',
+      icon: Award,
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
     },
     {
       id: 'quizzes',
       label: currentUser.role === 'teacher' ? 'Quizzes' : isAdmin ? 'All Quizzes' : 'Interactive Quizzes',
       icon: HelpCircle,
-      roles: ['admin', 'teacher', 'student'],
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
       badge: studentQuizzesCount > 0 ? studentQuizzesCount : undefined,
     },
     {
@@ -82,23 +120,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       roles: ['teacher', 'student'],
     },
     {
+      id: 'disciplinary',
+      label: isStudent ? 'Conduct & Warnings' : 'Disciplinary System',
+      icon: AlertTriangle,
+      roles: ['admin', 'super_admin', 'student'],
+      badge: studentActiveNoticesCount > 0 ? `${studentActiveNoticesCount}` : undefined,
+      badgeColor: 'bg-rose-100 text-rose-800',
+    },
+    {
       id: 'messages',
       label: isStudent ? 'Message Teachers' : 'Direct Messages',
       icon: MessageSquare,
-      roles: ['admin', 'teacher', 'student'],
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
     },
     {
       id: 'announcements',
       label: 'Announcements',
       icon: Megaphone,
-      roles: ['admin', 'teacher', 'student'],
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
     },
     {
       id: 'ai-helper',
       label: currentUser.role === 'teacher' ? 'AI Lesson & Quiz Helper' : 'AI Study Assistant',
       icon: Sparkles,
-      roles: ['admin', 'teacher', 'student'],
-      highlight: true,
+      roles: ['admin', 'super_admin', 'teacher', 'student'],
     },
   ];
 

@@ -17,7 +17,8 @@ import {
   User,
   GraduationCap,
   ShieldCheck,
-  Check
+  Check,
+  AlertCircle
 } from 'lucide-react';
 
 export const AdminDisciplinaryModule: React.FC = () => {

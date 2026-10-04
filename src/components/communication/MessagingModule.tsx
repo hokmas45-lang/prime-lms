@@ -20,15 +20,58 @@ export const MessagingModule: React.FC = () => {
 
   const isStudent = currentUser.role === 'student';
   const isTeacher = currentUser.role === 'teacher';
-  const isAdmin = currentUser.role === 'admin';
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'subadmin';
 
+  // Helper: check if a teacher is specifically assigned to teach the student's grade and section
+  const isTeacherAssignedToStudent = (teacher: AppUser, student: AppUser): boolean => {
+    if (teacher.role !== 'teacher') return false;
+    if (!student.grade || !student.section) return false;
+
+    // Check multi-grade & multi-section assignments
+    if (teacher.assignedClasses && teacher.assignedClasses.length > 0) {
+      return teacher.assignedClasses.some(
+        ac => ac.grade === student.grade && ac.sections.includes(student.section!)
+      );
+    }
+
+    // Fallback single grade & section assignment
+    return teacher.grade === student.grade && 
+      (teacher.section === student.section || teacher.section === 'All Sections');
+  };
+
+  // Contextual Class-Based Directory Filtering
   const contactList: AppUser[] = [
     ...(isAdmin ? [] : [MASTER_ADMIN_USER]),
-    ...users.filter(u => u.id !== currentUser.id && (
-      isAdmin ? true :
-      isStudent ? (u.role === 'teacher' || (u.grade === currentUser.grade && u.section === currentUser.section)) :
-      isTeacher ? (u.role === 'admin' || (u.grade === currentUser.grade && u.section === currentUser.section) || u.role === 'teacher') : true
-    ))
+    ...users.filter(u => {
+      if (u.id === currentUser.id) return false;
+
+      if (isAdmin) return true;
+
+      if (isStudent) {
+        // Strictly filter to ONLY teachers assigned to this student's grade & section
+        // (and same-class peers from the exact same grade & section)
+        if (u.role === 'teacher') {
+          return isTeacherAssignedToStudent(u, currentUser);
+        }
+        // Classmates in the exact same section
+        return u.role === 'student' && u.grade === currentUser.grade && u.section === currentUser.section;
+      }
+
+      if (isTeacher) {
+        // Teacher sees admin, other faculty, and students in their assigned classes
+        if (u.role === 'admin' || u.role === 'subadmin' || u.role === 'teacher') return true;
+        if (u.role === 'student') {
+          if (currentUser.assignedClasses && currentUser.assignedClasses.length > 0) {
+            return currentUser.assignedClasses.some(
+              ac => ac.grade === u.grade && ac.sections.includes(u.section || '')
+            );
+          }
+          return u.grade === currentUser.grade && u.section === currentUser.section;
+        }
+      }
+
+      return true;
+    })
   ];
 
   const [selectedRecipientId, setSelectedRecipientId] = useState<string>(contactList[0]?.id || '');

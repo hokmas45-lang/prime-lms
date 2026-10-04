@@ -6,32 +6,40 @@ import {
   User, 
   Sparkles, 
   Menu,
-  X
+  X,
+  Video,
+  Crown
 } from 'lucide-react';
 
 interface HeaderProps {
   onOpenAiHelper: () => void;
   onToggleMobileMenu: () => void;
   isMobileMenuOpen: boolean;
+  onOpenZoomModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   onOpenAiHelper, 
   onToggleMobileMenu,
-  isMobileMenuOpen 
+  isMobileMenuOpen,
+  onOpenZoomModal
 }) => {
-  const { currentUser, logout } = useData();
+  const { currentUser, logout, isSuperAdmin } = useData();
 
   if (!currentUser) return null;
 
-  const roleStyles = {
+  const roleStyles: Record<string, string> = {
+    super_admin: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
     admin: 'bg-rose-50 text-rose-700 border-rose-200',
+    subadmin: 'bg-purple-50 text-purple-700 border-purple-200',
     teacher: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     student: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 
-  const roleLabels = {
+  const roleLabels: Record<string, string> = {
+    super_admin: '👑 Super Admin',
     admin: 'Admin',
+    subadmin: 'Sub-Admin',
     teacher: 'Teacher',
     student: 'Student',
   };
@@ -64,9 +72,21 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right controls: AI helper & User Profile */}
+      {/* Right controls: Zoom launch, AI helper & User Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Floating AI Helper Trigger - Hidden on tiny screens since it's in bottom bar */}
+        {/* Teacher Live Zoom Quick Action */}
+        {(currentUser.role === 'teacher' || isSuperAdmin) && onOpenZoomModal && (
+          <button
+            onClick={onOpenZoomModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-all active:scale-95"
+            title="Start Live Zoom Session for your class"
+          >
+            <Video className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Start Live Zoom</span>
+          </button>
+        )}
+
+        {/* Floating AI Helper Trigger */}
         <button
           onClick={onOpenAiHelper}
           className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all shadow-xs"
@@ -89,8 +109,8 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1 mt-0.5">
-              <span className={`px-1.5 py-0.2 text-[9px] font-semibold rounded border ${roleStyles[currentUser.role]}`}>
-                {roleLabels[currentUser.role]}
+              <span className={`px-1.5 py-0.2 text-[9px] font-semibold rounded border ${roleStyles[currentUser.role] || roleStyles.student}`}>
+                {roleLabels[currentUser.role] || 'User'}
               </span>
               {(currentUser.grade || currentUser.section) && (
                 <span className="text-[9px] text-slate-600 font-medium truncate max-w-[80px]">

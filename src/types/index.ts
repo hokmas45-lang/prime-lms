@@ -1,4 +1,13 @@
-export type UserRole = 'admin' | 'teacher' | 'student';
+export type UserRole = 'super_admin' | 'admin' | 'subadmin' | 'teacher' | 'student';
+
+export type AdminPermission = 
+  | 'manage_users' 
+  | 'manage_admins'
+  | 'behavior_disciplinary' 
+  | 'academic_promotion' 
+  | 'ai_monitoring' 
+  | 'announcements'
+  | 'study_reels';
 
 export interface TeacherClassAssignment {
   grade: string;
@@ -11,6 +20,10 @@ export interface AppUser {
   username: string;
   password?: string;
   role: UserRole;
+  isSuperAdmin?: boolean; // Owner / Super Hidden Admin flag
+  isBlocked?: boolean;    // Admin or Super Admin can suspend/block accounts
+  subAdminTitle?: string; // e.g. "School Registrar", "Vice Principal", "System Moderator", "Dean of Academics"
+  permissions?: string[]; // Granular permissions for sub-administrative accounts
   grade?: string;      // e.g. "Grade 9", "Grade 10", "Grade 11", "Grade 12"
   section?: string;    // e.g. "Section A", "Section B", "Section C"
   subject?: string;    // e.g. "Mathematics", "Science", "English" for teachers
@@ -21,9 +34,59 @@ export interface AppUser {
   updatedAt?: string;
 }
 
+export interface LiveZoomSession {
+  id: string;
+  topic: string;
+  subject: string;
+  grade: string;
+  section: string;
+  teacherId: string;
+  teacherName: string;
+  zoomUrl: string;
+  meetingId?: string;
+  passcode?: string;
+  status: 'active' | 'ended';
+  startedAt: string;
+  endedAt?: string;
+}
+
+export interface SubjectCardData {
+  id: string;
+  name: string;
+  code: string; // e.g., "ENG-101", "E.S.5", "MATH-9"
+  grade: string;
+  section?: string;
+  teacherName: string;
+  averageScore?: number; // Dynamic graded percentage (e.g., 70%)
+  gradedCount: number;
+  notificationCount: number; // Bell pill count
+  iconType: 'english' | 'es5' | 'math' | 'physics' | 'chemistry' | 'biology' | 'cs' | 'history' | 'general';
+  colorTheme: string;
+  zoomActive?: boolean;
+  zoomSession?: LiveZoomSession;
+}
+
 export interface TargetClassItem {
   grade: string;
   section: string;
+}
+
+export interface StudyReel {
+  id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  subject: string;
+  teacherId: string;
+  teacherName: string;
+  grade: string;
+  section: string;
+  targetClasses?: TargetClassItem[]; // Targeted publishing to prevent global spam
+  likes: number;
+  likedBy?: string[];
+  duration?: string;
+  createdAt: string;
 }
 
 export interface Assignment {
