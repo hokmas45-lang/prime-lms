@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access information, username and credentials",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "username": { "type": "string", "maxLength": 50 },
+        "password": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "enum": ["admin", "teacher", "student", "parent"] },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "subject": { "type": "string", "maxLength": 80 },
+        "avatar": { "type": "string", "maxLength": 300 },
+        "points": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "username", "role"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Academic course offering and classroom information",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 120 },
+        "code": { "type": "string", "maxLength": 30 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 100 },
+        "room": { "type": "string", "maxLength": 50 },
+        "schedule": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "color": { "type": "string", "maxLength": 30 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "code", "teacherId", "teacherName"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Course assignment or homework published by teachers",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string", "maxLength": 128 },
+        "courseTitle": { "type": "string", "maxLength": 120 },
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 2500 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "maxScore": { "type": "number" },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "dueDate", "teacherId", "maxScore"]
+    },
+    "Quiz": {
+      "title": "Quiz",
+      "description": "Interactive multiple choice or assessment quiz created by teachers",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 1500 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "courseTitle": { "type": "string", "maxLength": 120 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 100 },
+        "totalPoints": { "type": "number" },
+        "dueDate": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "teacherId", "grade", "section"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Student homework submission with text, image uploads, and grading results",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "graded"] },
+        "score": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 1500 },
+        "submittedAt": { "type": "string" },
+        "gradedAt": { "type": "string" }
+      },
+      "required": ["assignmentId", "studentId", "status", "submittedAt"]
+    },
+    "QuizSubmission": {
+      "title": "QuizSubmission",
+      "description": "Student quiz attempt with automated score calculation",
+      "type": "object",
+      "properties": {
+        "quizId": { "type": "string", "maxLength": 128 },
+        "quizTitle": { "type": "string", "maxLength": 150 },
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "score": { "type": "number" },
+        "maxScore": { "type": "number" },
+        "percentage": { "type": "number" },
+        "submittedAt": { "type": "string" }
+      },
+      "required": ["quizId", "studentId", "score", "submittedAt"]
+    },
+    "AiInteraction": {
+      "title": "AiInteraction",
+      "description": "Logged AI chatbot conversations for administrator monitoring and moderation",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "role": { "type": "string", "maxLength": 20 },
+        "prompt": { "type": "string", "maxLength": 5000 },
+        "response": { "type": "string", "maxLength": 10000 },
+        "subject": { "type": "string", "maxLength": 80 },
+        "flagged": { "type": "boolean" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["studentId", "studentName", "prompt", "response", "timestamp"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Direct message between school members with text and image attachments",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "maxLength": 128 },
+        "senderName": { "type": "string", "maxLength": 100 },
+        "senderRole": { "type": "string", "maxLength": 50 },
+        "recipientId": { "type": "string", "maxLength": 128 },
+        "recipientName": { "type": "string", "maxLength": 100 },
+        "conversationId": { "type": "string", "maxLength": 128 },
+        "content": { "type": "string", "maxLength": 2000 },
+        "imageUrl": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["senderId", "senderName", "recipientId", "conversationId"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "School wide announcement or notification alert",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 150 },
+        "content": { "type": "string", "maxLength": 3000 },
+        "category": { "type": "string", "enum": ["urgent", "academic", "general"] },
+        "authorName": { "type": "string", "maxLength": 100 },
+        "targetGrade": { "type": "string", "maxLength": 30 },
+        "targetSection": { "type": "string", "maxLength": 20 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "content", "category", "authorName"]
+    },
+    "DailyEvaluation": {
+      "title": "DailyEvaluation",
+      "description": "Continuous daily grading and evaluation by teachers covering behavior, participation, and assignments",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "teacherId": { "type": "string", "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 100 },
+        "grade": { "type": "string", "maxLength": 30 },
+        "section": { "type": "string", "maxLength": 20 },
+        "subject": { "type": "string", "maxLength": 80 },
+        "date": { "type": "string", "maxLength": 30 },
+        "behaviorScore": { "type": "number" },
+        "participationScore": { "type": "number" },
+        "assignmentScore": { "type": "number" },
+        "overallScore": { "type": "number" },
+        "remarks": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["studentId", "teacherId", "date", "behaviorScore", "participationScore", "assignmentScore"]
+    },
+    "DisciplinaryNotice": {
+      "title": "DisciplinaryNotice",
+      "description": "Administrative disciplinary notice or expulsion warning generated with Gemini AI",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "maxLength": 128 },
+        "studentName": { "type": "string", "maxLength": 100 },
+        "studentGrade": { "type": "string", "maxLength": 30 },
+        "studentSection": { "type": "string", "maxLength": 20 },
+        "noticeType": { "type": "string", "enum": ["warning", "suspension", "expulsion"] },
+        "reason": { "type": "string", "maxLength": 1500 },
+        "duration": { "type": "string", "maxLength": 100 },
+        "formalLetter": { "type": "string", "maxLength": 8000 },
+        "issuedBy": { "type": "string", "maxLength": 100 },
+        "status": { "type": "string", "enum": ["active", "acknowledged", "resolved"] },
+        "issuedAt": { "type": "string" }
+      },
+      "required": ["studentId", "studentName", "noticeType", "reason", "formalLetter", "issuedAt"]
+    },
+    "AcademicSettings": {
+      "title": "AcademicSettings",
+      "description": "System-wide academic year, term, and promotion settings",
+      "type": "object",
+      "properties": {
+        "currentAcademicYear": { "type": "string", "maxLength": 30 },
+        "currentTerm": { "type": "string", "maxLength": 30 },
+        "lastPromotionDate": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["currentAcademicYear", "currentTerm"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles with credentials and grade/section assignment"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "School academic courses"
+    },
+    "/assignments/{assignmentId}": {
+      "schema": "Assignment",
+      "description": "Course assignments created by faculty"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Interactive quizzes created by teachers"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Homework submitted by students and graded by faculty"
+    },
+    "/quizSubmissions/{quizSubmissionId}": {
+      "schema": "QuizSubmission",
+      "description": "Graded quiz results submitted by students"
+    },
+    "/aiInteractions/{interactionId}": {
+      "schema": "AiInteraction",
+      "description": "Logged AI chatbot conversations for admin monitoring"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Internal messages between teachers, students, and parents"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "School-wide announcements and emergency alerts"
+    },
+    "/evaluations/{evaluationId}": {
+      "schema": "DailyEvaluation",
+      "description": "Teacher continuous evaluations and daily grades"
+    },
+    "/disciplinaryNotices/{noticeId}": {
+      "schema": "DisciplinaryNotice",
+      "description": "Administrative disciplinary notices and warnings"
+    },
+    "/settings/{settingId}": {
+      "schema": "AcademicSettings",
+      "description": "Academic year and term configuration"
+    }
+  }
+}

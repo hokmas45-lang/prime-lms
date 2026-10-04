@@ -1,0 +1,6 @@
+{
+  "name": "Prime LMS",
+  "description": "Next-generation School & Learning Management System featuring calm soft aesthetics, master admin user management with grade and section assignment, teacher assignments and quizzes, student portals, and Gemini AI assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
